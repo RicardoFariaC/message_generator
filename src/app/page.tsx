@@ -1,113 +1,341 @@
+"use client"
+
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import Row from "@/components/custom/row";
+import Column from "@/components/custom/column";
+import { DatePicker } from "@/components/custom/datepicker";
+import { useEffect, useState } from "react";
+import InputMoney from "@/components/custom/moneyinput";
+import CarPlateInput from "@/components/custom/carplateinput";
+import InsuranceTypes, { InsuranceEnum } from "@/components/blocks/SecuritySelect";
+import MultipleSelector, { Option } from "@/components/custom/multiselect";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CopyIcon } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import img from "../assets/download.png"
 import Image from "next/image";
 
+const PaymentTypes = [
+  { label: "Débito em conta", value: "débito em conta" },
+  { label: "Crédito", value: "crédito" },
+  { label: "Boleto", value: "boleto" },
+]
+
+const insuranceList = [
+  "azul", "tokio marine", "sompo", "allianz", 
+  "porto seguro", "suhai", "hdi", "sul américa", 
+  "zurich", "bradesco", "liberty"
+]
+
 export default function Home() {
+  const [name, setName] = useState<string>("");
+  const [date, setDate] = useState<Date>(new Date());
+  const [employee, setEmployee] = useState<string>("");
+  const [insuranceCompany, setInsuranceCompany] = useState<string>("");
+  const [insurance, setInsurance] = useState<string>("");
+  const [currency, setCurrency] = useState<number>(0.00);
+  const [plate, setPlate] = useState<string>("");
+  const [model, setModel] = useState<string>("");
+  const [cep, setCEP] = useState<string>("");
+  const [address, setAddress] = useState<string>("");
+  const [useType, setUseType] = useState<string>("");
+  const [isBelow25, setIsBelow25] = useState<boolean>(false);
+  const [payment, setPayment] = useState<Option[]>([]);
+  const [paymentTimes, setPaymentTimes] = useState<number[]>([]);
+  const [generateMessage, setGenerateMessage] = useState<boolean>(false);
+  const [messageInfo, setMessageInfo] = useState<string>("");
+
+  function setPaymentTimesInPosition(e: number, id: number) {
+    let items = [...paymentTimes]
+    let item = items[id];
+    item = e;
+    items[id] = item;
+    setPaymentTimes(items);
+  }
+
+  function setPaymentDebug(e: Option[]) {
+    setPayment(e);
+  }
+
+  const handleInsuranceTypeChange = (e: string) => {
+    setInsurance(e);
+    if(insurance == InsuranceEnum.AUTO) setAddress("");
+    else if(insurance == InsuranceEnum.VIDA) {
+      setAddress("");
+      setModel("");
+      setPlate("");
+    } else {
+      setModel("");
+      setPlate("");
+    }
+  }
+
+  const handleClipboardCopy = () => {
+    navigator.clipboard.writeText(messageInfo);
+  }
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setGenerateMessage(true);
+
+    const message: string = `
+🚨 SEU SEGURO ${insurance.toUpperCase()} VENCE NO DIA ${date.toLocaleDateString("pt-BR")} 🚨
+🔐 ${name} 
+
+A Renovação do seu seguro chegou, para não ficar sem seguro estamos aqui para lembra-la(o)
+Segue abaixo um resumo para analisar:
+
+🥇 ${insuranceCompany.toUpperCase()}
+💲 R$ ${currency.toFixed(2).replace(".", ",")}
+${payment.map((pay, id): string => {
+  return `✅ Até ${paymentTimes[id]} x sem juros no ${pay.value}\n`
+}).join("")}
+${insurance == InsuranceEnum.AUTO ?
+  `⚠️ *CONFIRME O VEÍCULO E O PERFIL*
+🚘 Modelo: ${model}        
+🎟 Placa: ${plate}
+Uso particular, comercial ou motorista de app? ${[useType.charAt(0).toUpperCase() + useType.slice(1)]}
+Condutor menor de 25 anos? ${isBelow25 ? "Sim" : "Não"}
+  ` 
+  : insurance == InsuranceEnum.EMPRESARIAL || insurance == InsuranceEnum.RESIDENCIAL ?
+  `
+⚠ CONFIRME SEU ENDEREÇO e PERFIL
+🏡 ${address} `
+  :
+  ``
+}
+CEP: ${[cep.slice(0, cep.length - 3), "-", cep.slice(cep.length-3)].join("")}
+
+Em anexo para sua análise e aprovação. Planilha completa com PERFIL, PARCELAMENTOS E VEICULO.
+🥇365Vale Seguros esta sempre a sua disposição🥇
+
+Aguardamos seu retorno e aprovação
+Atenciosamente,
+
+${employee}
+    `
+    console.log(message)
+    setMessageInfo(message);
+  }
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+    <main className="flex min-h-screen flex-col justify-center items-center p-24 pt-0 border-2">
+      <Image
+        className="w-32 m-12 select-none"
+        draggable={false}
+        src={img}
+        alt="365 vale seguros"
+      />
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            Entre com as informações do cliente
+          </CardTitle>
+          <CardDescription>
+            No final, clique no botão destacado para gerar a mensagem.
+          </CardDescription>
+          <Separator />
+        </CardHeader>
+        <CardContent>
+          <form className="flex flex-col mt-2" onSubmit={handleSubmit}>
+            <Column className="gap-6">
+              <Row>
+                <Column>
+                  <Label>Vencimento:</Label>
+                  <DatePicker
+                    mode="single"
+                    value={date}
+                    onSelect={(e) => setDate(e!)}
+                  />
+                </Column>
+                <Column>
+                  <Label>Nome do segurado:</Label>
+                  <Input 
+                    placeholder="Fulano da Silva"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    />
+                </Column>
+                <Column>
+                  <Label>Custo do seguro</Label>
+                  <InputMoney
+                    value={currency}
+                    onChange={(e) => setCurrency(Number.parseFloat(e.target.value))}
+                  />
+                </Column>
+              </Row>
+              <Row> 
+                <Column>
+                  <Label>Funcionário:</Label>
+                  <Input
+                    className="border-2"
+                    placeholder="Fulano da Silva"
+                    value={employee}
+                    onChange={(e) => setEmployee(e.target.value)}
+                    />
+                </Column>
+                <Column>
+                      <Label>CEP:</Label>
+                      <Input
+                        placeholder="00000000"
+                        maxLength={8}
+                        type="number"
+                        value={cep}
+                        onChange={(e) => setCEP(e.target.value)}
+                        />
+                    </Column> 
+                <Column>
+                  <Label>Seguro:</Label>
+                  <Select
+                    value={insuranceCompany}
+                    onValueChange={(e) => setInsuranceCompany(e)}
+                  >
+                    <SelectTrigger className="w-96 text-lg">
+                      <SelectValue
+                        placeholder="Selecione o seguro"
+                      />
+                      <SelectContent>
+                        {
+                          insuranceList.sort().map((insuranceOne, id) => {
+                            return (
+                              <SelectItem key={insuranceOne} value={insuranceOne} className="text-lg">
+                                {insuranceOne.toUpperCase()}
+                              </SelectItem>
+                            )
+                          })
+                        }
+                      </SelectContent>
+                    </SelectTrigger>
+                  </Select>
+                </Column>
+              </Row>
+              <Row>
+              <Column>
+                  <Label>Tipo de seguro</Label>
+                  <InsuranceTypes
+                    value={insurance}
+                    onValueChange={(e) => handleInsuranceTypeChange(e)}
+                  ></InsuranceTypes>
+                </Column>
+                {insurance == InsuranceEnum.AUTO ?
+                  <>
+                    <Column>
+                      <Label>Placa:</Label>
+                      <CarPlateInput
+                        placeholder="AAA0000"
+                        value={plate}
+                        onChange={(e) => setPlate(e.target.value)}
+                      />
+                    </Column>
+                    <Column>
+                      <Label>Modelo:</Label>
+                      <Input
+                        placeholder="Fiat Uno 2010" 
+                        value={model}
+                        onChange={(e) => setModel(e.target.value)}
+                      />
+                    </Column>
+                  </>
+                  : insurance == InsuranceEnum.RESIDENCIAL || insurance == InsuranceEnum.EMPRESARIAL ?
+                    <Column>
+                      <Label>Endereço:</Label>
+                      <Input
+                        className=""
+                        placeholder="Rua das Letras, 123"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        />
+                    </Column> 
+                  : ""
+                }
+              </Row>
+              {
+                insurance == InsuranceEnum.AUTO ?
+                  <Row className="items-start">
+                  <Column>
+                    <Label className="">Seguro para condutor abaixo dos 25 anos?</Label>
+                    <Checkbox 
+                      className="h-5 w-5" 
+                      checked={isBelow25}
+                      onCheckedChange={() => setIsBelow25(!isBelow25)}
+                    />
+                  </Column>
+                  <Column>
+                    <Label>Tipo de uso:</Label>
+                    <Select
+                      value={useType}
+                      onValueChange={(e) => setUseType(e)}
+                    >
+                      <SelectTrigger className="text-lg w-96">
+                        <SelectValue
+                          placeholder="Particular, Comercial ou APP?"
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem className="text-lg" value="particular">Particular</SelectItem>
+                        <SelectItem className="text-lg" value="comercial">Comercial</SelectItem>
+                        <SelectItem className="text-lg" value="app">App</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Column>
+                </Row> :
+                ""
+              }
+              <Row>
+                <Column>
+                  <Label>Forma de pagamento:</Label>
+                  <MultipleSelector
+                    className="w-auto"
+                    placeholder="Escolha as formas de pagamento..."
+                    defaultOptions={PaymentTypes}
+                    value={payment}
+                    onChange={setPaymentDebug}
+                  />
+                </Column>
+              </Row>
+              {
+                payment.map((payMethod, id) => {
+                  return (
+                  <Column>
+                    <Label>Quantas vezes sem juros? {payMethod.label}</Label>
+                    <Input
+                      key={id}
+                      value={paymentTimes[id]}
+                      onChange={(e) => setPaymentTimesInPosition(parseInt(e.target.value), id)}
+                      type="number"
+                      placeholder="12"
+                    ></Input>
+                  </Column>
+                      
+                  )
+                })
+              }
+            </Column>
+            <Separator className="mt-5 mb-5"/>
+            <Row className="flex-row-reverse">
+              <Button type="submit" >Gerar mensagem</Button>
+            </Row>
+          </form>
+        </CardContent>
+      </Card>
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-full sm:before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full sm:after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50 text-balance`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
+      {messageInfo != "" ?
+        <Card className="mt-5 whitespace-pre-line w-auto flex flex-row">
+          <CopyIcon 
+            className="m-5 mb-0 active:text-slate-950 hover:text-slate-400"
+            onClick={() => handleClipboardCopy()}
+          />
+          <CardContent className="items-start">
+            {messageInfo}
+          </CardContent>
+        </Card>
+        :
+        ""
+      }
     </main>
   );
 }
