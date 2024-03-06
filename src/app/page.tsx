@@ -300,7 +300,7 @@ ${employee}
               {
                 payment.map((payMethod, id) => {
                   return (
-                  <Column>
+                  <Column key={payMethod.label}>
                     <Label>Quantas vezes sem juros? {payMethod.label}</Label>
                     <Input
                       key={id}
